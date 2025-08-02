@@ -1,0 +1,20 @@
+# compiled output
+build/
+*.out
+*.exe
+*.o
+
+# VS Code settings
+.vscode/
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# stockfish (if you copy in a binary)
+stockfish
+
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
