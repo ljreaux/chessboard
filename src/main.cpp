@@ -5,7 +5,7 @@
 #include <sstream>
 #include <vector>
 
-// Helper to split a string into lines
+// Split a blob of text into lines
 std::vector<std::string> splitLines(const std::string &blob)
 {
   std::vector<std::string> lines;
@@ -16,6 +16,40 @@ std::vector<std::string> splitLines(const std::string &blob)
     lines.push_back(line);
   }
   return lines;
+}
+
+// Extract all legal moves from a square like "e2"
+std::vector<std::string> getLegalMovesFrom(const std::string &square, StockfishEngine &engine)
+{
+  std::vector<std::string> validMoves;
+
+  engine.sendCommand("ucinewgame");
+  engine.sendCommand("position startpos");
+  engine.sendCommand("go perft 1");
+
+  for (int i = 0; i < 100; ++i)
+  {
+    std::string blob = engine.readLine();
+    if (!blob.empty())
+    {
+      auto lines = splitLines(blob);
+      for (const std::string &line : lines)
+      {
+        size_t colonPos = line.find(':');
+        if (colonPos != std::string::npos)
+        {
+          std::string move = line.substr(0, colonPos);
+          if (move.substr(0, square.size()) == square)
+          {
+            validMoves.push_back(move);
+          }
+        }
+      }
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+  }
+
+  return validMoves;
 }
 
 int main()
@@ -30,7 +64,6 @@ int main()
   while (true)
   {
     std::string fromSquare;
-
     std::cout << "Enter square (e.g. e2), or 'quit' to exit: ";
     std::cin >> fromSquare;
 
@@ -39,33 +72,12 @@ int main()
       break;
     }
 
-    engine.sendCommand("ucinewgame");
-    engine.sendCommand("position startpos");
-    engine.sendCommand("go perft 1");
+    auto moves = getLegalMovesFrom(fromSquare, engine);
 
     std::cout << "Valid moves from " << fromSquare << ":\n";
-
-    for (int i = 0; i < 100; ++i)
+    for (const auto &move : moves)
     {
-      std::string blob = engine.readLine();
-      if (!blob.empty())
-      {
-        auto lines = splitLines(blob);
-        for (const std::string &line : lines)
-        {
-          size_t colonPos = line.find(':');
-          if (colonPos != std::string::npos)
-          {
-            std::string move = line.substr(0, colonPos);
-            if (move.substr(0, fromSquare.size()) == fromSquare)
-            {
-              std::cout << "  " << move << "\n";
-            }
-          }
-        }
-      }
-
-      std::this_thread::sleep_for(std::chrono::milliseconds(20));
+      std::cout << "  " << move << "\n";
     }
 
     std::cout << "\n";
